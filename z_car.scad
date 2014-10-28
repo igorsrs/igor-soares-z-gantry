@@ -20,12 +20,13 @@
 include <configuration.scad>
 use <linear_bushing_housing.scad>
 
+mirror([0,1,0])
 z_car($fn=64);
 
 module z_car(
     wall=WALL_WIDTH,
     lwall=LIGHT_WALL_WIDTH,
-    hsupp=HORIZONTAL_SUPPORT_WALL*2,
+    hsupp=-0.01,
     vsupp=VERTICAL_SUPPORT_WALL,
     screw_r=3.7/2,
     screw_nut_width=6.7,
@@ -35,8 +36,9 @@ module z_car(
     total_len=100,
     bed_screw_r=3.7/2,
     bed_screws_room=6,
-    bed_screws_separation=40,
-    support_h=30)
+    threaded_rod_r=8.4/2,
+    threaded_rod_room=10,
+    bed_screws_separation=40)
 {
   bushings_separation = total_len - 2*bushing_l - 4*bushing_wall;
   bed_base_len = bushing_r + lwall + bed_screws_room + bed_screws_separation +
@@ -98,22 +100,36 @@ module z_car(
       translate([-bed_base_len, bushing_r + lwall - wall, ST])
         difference()
       {
-         cube([bed_base_len, wall, support_h + wall - ST]);
-         translate([0,-1,support_h - ST]) rotate([0,135,0])
+         cube([bed_base_len, wall, bed_base_len + wall]);
+         translate([0,-1,wall + ST]) rotate([0,-45,0])
           #cube([bed_base_len*sqrt(2), wall +2, bed_base_len*sqrt(2)]);
       }
-      translate([-bed_base_len, bushing_r + lwall - wall, ST]) {
-         translate([0,0,support_h])
-           cube([bed_base_len, wall + bed_screws_room, wall]);
-         translate([bed_base_len, 0, 0])
-           cube([vsupp, wall + bed_screws_room, wall + support_h]);
+      translate([-bed_base_len, bushing_r + lwall - wall, ST])
+         cube([bed_base_len, wall + bed_screws_room, wall]);
+      for (sp=screws_pos)
+        translate(sp){
+          cylinder(r=bed_screws_room - ST, h=wall);
       }
-      for (sp=screws_pos) translate([0,0,0])
-        translate(sp) difference(){
-          cylinder(r=bed_screws_room - ST, h=wall + support_h);
-          translate([0,0,-1])
-            cylinder(r=bed_screws_room -hsupp, h=support_h + 1 - ST);
+      translate([
+              -bushing_r - lwall - threaded_rod_room,
+              bushing_r + lwall - wall,
+              total_len])
+        mirror([0,0,1]) difference()
+      {
+          cube([2*threaded_rod_room,
+                wall,
+                2*threaded_rod_room +bushing_r + lwall + threaded_rod_room]);
+          translate([-ST,-1,2*threaded_rod_room]) rotate([0,45,0]) mirror([1,0,0])
+            #cube([2*threaded_rod_room,
+                   wall +2,
+                   2*threaded_rod_room +bushing_r + lwall + threaded_rod_room]);
       }
+      translate([
+              -bushing_r - lwall - threaded_rod_room,
+              bushing_r + lwall - wall,
+              total_len - threaded_rod_room])
+        rotate([-90,0,0])
+          cylinder(r=threaded_rod_room, h=wall);
     }
     #linear_bushing_housing_negative(
       wall=wall,
@@ -153,8 +169,14 @@ module z_car(
             num_screws=1);
 
       for (sp=screws_pos)
-        translate(sp) translate([0,0,support_h + vsupp]){
+        translate(sp) translate([0,0,-1]){
           #cylinder(r=bed_screw_r - ST, h=wall+2);
       }
+      translate([
+              -bushing_r - lwall - threaded_rod_room,
+              bushing_r + lwall - wall -1,
+              total_len - threaded_rod_room])
+        rotate([-90,0,0])
+          #cylinder(r=threaded_rod_r, h=wall +2);
   }
 }
